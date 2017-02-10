@@ -3,11 +3,16 @@ load('FirstImpressionsV2.mat')
 train = 1:6000;
 valid = 6001:8000;
 representation={'block','level'};
-for num_lvl = 7
-for winsize = 3
-for F =1%:size(representation,2)
-load(['Feature/LPQ_',num2str(representation{F}),'_FD_',num2str(num_lvl),'_128_25_1_',num2str(winsize),'_1_1_Grey_1.mat'])
-features = FTRS;clear FTRS;
+for num_lvl = 7%1:10
+for winsize = 3%[3 7 9]
+for F =1%:size(representation,2);
+for pas = 1
+load(['Feature/LPQ_',num2str(representation{F}),'_FD_',num2str(num_lvl),'_128_',num2str(pas),'_1_',num2str(winsize),'_1_1_Grey_1.mat'])
+FTRS_TR = FTRS(train,:);
+
+FTRS_VL = FTRS(valid,:);
+
+
 for i=1:numel(data)
     extraversion.ground_truth(i) = data(i).extraversion;
     extraversion.estimated(i) = 0;
@@ -23,23 +28,29 @@ for i=1:numel(data)
     interview.estimated(i) = 0;
 end
 
-SVR.extraversion = fitrlinear(features(train,:),extraversion.ground_truth(train));
-extraversion.estimated(valid) = predict(SVR.extraversion,features(valid,:));
+%SVR.extraversion = fitrlinear(features(train,:),extraversion.ground_truth(train));
+SVR.extraversion = fitrsvm(FTRS_TR,extraversion.ground_truth(train),'KernelFunction','gaussian','KernelScale','auto','Standardize',true);
+extraversion.estimated(valid) = predict(SVR.extraversion,FTRS_VL);
 
-SVR.neuroticism = fitrlinear(features(train,:),neuroticism.ground_truth(train));
-neuroticism.estimated(valid) = predict(SVR.neuroticism,features(valid,:));
+%SVR.neuroticism = fitrlinear(features(train,:),neuroticism.ground_truth(train));
+SVR.neuroticism = fitrsvm(FTRS_TR,neuroticism.ground_truth(train),'KernelFunction','gaussian','KernelScale','auto','Standardize',true);
+neuroticism.estimated(valid) = predict(SVR.neuroticism,FTRS_VL);
 
-SVR.agreeableness = fitrlinear(features(train,:),agreeableness.ground_truth(train));
-agreeableness.estimated(valid) = predict(SVR.agreeableness,features(valid,:));
+%SVR.agreeableness = fitrlinear(features(train,:),agreeableness.ground_truth(train));
+SVR.agreeableness = fitrsvm(FTRS_TR,agreeableness.ground_truth(train),'KernelFunction','gaussian','KernelScale','auto','Standardize',true);
+agreeableness.estimated(valid) = predict(SVR.agreeableness,FTRS_VL);
 
-SVR.conscientiousness = fitrlinear(features(train,:),conscientiousness.ground_truth(train));
-conscientiousness.estimated(valid) = predict(SVR.conscientiousness,features(valid,:));
+%SVR.conscientiousness = fitrlinear(features(train,:),conscientiousness.ground_truth(train));
+SVR.conscientiousness = fitrsvm(FTRS_TR,conscientiousness.ground_truth(train),'KernelFunction','gaussian','KernelScale','auto','Standardize',true);
+conscientiousness.estimated(valid) = predict(SVR.conscientiousness,FTRS_VL);
 
-SVR.openness = fitrlinear(features(train,:),openness.ground_truth(train));
-openness.estimated(valid) = predict(SVR.openness,features(valid,:));
+%SVR.openness = fitrlinear(features(train,:),openness.ground_truth(train));
+SVR.openness = fitrsvm(FTRS_TR,openness.ground_truth(train),'KernelFunction','gaussian','KernelScale','auto','Standardize',true);
+openness.estimated(valid) = predict(SVR.openness,FTRS_VL);
 
-SVR.interview = fitrlinear(features(train,:),interview.ground_truth(train));
-interview.estimated(valid) = predict(SVR.interview,features(valid,:));
+%SVR.interview = fitrlinear(features(train,:),interview.ground_truth(train));
+SVR.interview = fitrsvm(FTRS_TR,interview.ground_truth(train),'KernelFunction','gaussian','KernelScale','auto','Standardize',true);
+interview.estimated(valid) = predict(SVR.interview,FTRS_VL);
 
 j = 1;
 for i=valid(1):valid(end)
@@ -51,10 +62,11 @@ for i=valid(1):valid(end)
     pred_o(j) = openness.estimated(i);
     j = j + 1;
 end
-name = sprintf('results/LPQ_%s_FD_%d_128_25_1_%d_1_1_Grey_1',representation{F},num_lvl,winsize);
-save(sprintf('%s.mat',name),'pred_i','pred_a','pred_c','pred_e','pred_n','pred_o','-v7.3');
+name = sprintf('results/RBF_LPQ_%s_FD_%d_128_%d_1_%d_1_1_Grey_1',representation{F},num_lvl,pas,winsize);
+save(sprintf('%s.mat',name),'pred_i','pred_a','pred_c','pred_e','pred_n','pred_o');
 clear features;
 fprintf('%s \n',name);
+end
 end
 end
 end
